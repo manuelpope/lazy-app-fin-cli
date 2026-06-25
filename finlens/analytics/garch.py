@@ -1,8 +1,12 @@
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
 from arch import arch_model
+from arch.univariate.base import DataScaleWarning
+
+warnings.filterwarnings("ignore", category=DataScaleWarning)
 
 
 @dataclass
@@ -22,17 +26,17 @@ def fit_gjr_garch(
     p: int = 1,
     q: int = 1,
 ) -> GARCHResult:
-    r = returns.dropna() * 100
+    r = returns.dropna()
 
     try:
         model = arch_model(
             r,
+            mean="zero",
             vol="GARCH",
             p=p,
             o=1,
             q=q,
             dist="t",
-            rescale=False,
         )
         result = model.fit(disp="off", show_warning=False)
 
@@ -43,7 +47,7 @@ def fit_gjr_garch(
 
         persistence = alpha + gamma / 2 + beta
         cond_vol = result.conditional_volatility.iloc[-1]
-        ann_vol = cond_vol * np.sqrt(252) / 100
+        ann_vol = cond_vol * float(np.sqrt(252))
 
         if ann_vol < 0.15:
             signal = "LOW VOL"
@@ -53,16 +57,16 @@ def fit_gjr_garch(
             signal = "MED VOL"
 
         return GARCHResult(
-            omega=round(omega, 6),
+            omega=round(omega, 8),
             alpha=round(alpha, 4),
             gamma=round(gamma, 4),
             beta=round(beta, 4),
             persistence=round(persistence, 4),
-            conditional_vol=round(cond_vol / 100, 4),
+            conditional_vol=round(cond_vol, 4),
             annualized_vol=round(ann_vol, 4),
             signal=signal,
         )
-    except Exception:
+    except Exception as e:
         return GARCHResult(
             omega=0,
             alpha=0,
