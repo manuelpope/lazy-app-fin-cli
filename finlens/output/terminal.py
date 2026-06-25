@@ -104,6 +104,15 @@ class DetailPanel(Static):
 
         signal_color = self._color_for_signal(a.composite_signal)
 
+        var = a.var
+        var_block = ""
+        cvar_color = "red" if var and var.cvar_95_pct > 3.5 else "green" if var and var.cvar_95_pct < 1.5 else "yellow"
+        if var:
+            var_block = f"""
+[bold cyan]── VaR / CVaR (t-Student, ν={garch.dof}) ──[/]
+VaR 95%: {var.var_95_pct:.2f}%   CVaR 95%: [{cvar_color}]{var.cvar_95_pct:.2f}%[/]   Hist 95%: {var.var_95_hist_pct:.2f}%
+Skewness: {var.skewness}   Kurtosis: {var.kurtosis}   [{cvar_color}]Risk: {var.signal}[/]"""
+
         content = f"""[bold]{a.ticker}[/]  ${a.price}  {a.price_change_pct:+.2f}%
 [dim]Market:[/] {a.market.upper()}
 
@@ -119,7 +128,7 @@ Bollinger Bands:{ind.bb_signal}
 
 [bold cyan]── GJR-GARCH(1,1) ──[/]
 [dim]ω:[/] {garch.omega:.6f}   [dim]α:[/] {garch.alpha}   [dim]γ:[/] {garch.gamma}   [dim]β:[/] {garch.beta}
-[dim]Persistence:[/] {garch.persistence}   [dim]σ (ann):[/] {garch.annualized_vol * 100:.2f}%
+[dim]Persistence:[/] {garch.persistence}   [dim]σ (ann):[/] {garch.annualized_vol * 100:.2f}%{var_block}
 
 [bold cyan]── Risk Metrics ──[/]
 Sharpe: {risk.sharpe_ratio}   Sortino: {risk.sortino_ratio}   Calmar: {risk.calmar_ratio}

@@ -5,7 +5,7 @@ import pandas as pd
 from finlens.analytics.capm import CAPMResult, heavy_tailed_capm
 from finlens.analytics.garch import GARCHResult, fit_gjr_garch
 from finlens.analytics.indicators import IndicatorSignals, compute_all_indicators
-from finlens.analytics.risk import RiskMetrics, calculate_risk_metrics
+from finlens.analytics.risk import RiskMetrics, VaRResult, calculate_risk_metrics, calculate_var_metrics
 from finlens.config import FinLensConfig
 
 
@@ -19,6 +19,7 @@ class TickerAnalysis:
     capm: CAPMResult | None
     garch: GARCHResult
     risk: RiskMetrics
+    var: VaRResult | None = None
     composite_score: float = 0.0
     composite_signal: str = "HOLD"
 
@@ -99,6 +100,12 @@ def analyze_ticker(
 
     garch_result = fit_gjr_garch(recent_returns, p=config.signals.garch_p, q=config.signals.garch_q)
 
+    var_result = calculate_var_metrics(
+        recent_returns,
+        conditional_vol=garch_result.conditional_vol,
+        dof=garch_result.dof,
+    )
+
     risk_result = calculate_risk_metrics(
         recent_returns,
         risk_free_rate=market_config.get("risk_free_rate", 0),
@@ -119,6 +126,7 @@ def analyze_ticker(
         indicators=indicators,
         capm=capm_result,
         garch=garch_result,
+        var=var_result,
         risk=risk_result,
         composite_score=comp_score,
         composite_signal=comp_signal,

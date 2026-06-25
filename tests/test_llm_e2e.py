@@ -46,7 +46,7 @@ def _make_fake_analysis(ticker: str = "SPY", market: str = "us", price: float = 
             sma_signal="BUY", rsi_signal="NEUTRAL", macd_signal="HOLD", bb_signal="SELL",
         ),
         capm=CAPMResult(beta=1.2, alpha=0.05, r_squared=0.85, p_value_alpha=0.01, p_value_beta=0.01, residuals_std=0.02, skewness=-0.1, kurtosis=3.2, signal="BUY"),
-        garch=GARCHResult(omega=2.5e-6, alpha=0.08, gamma=0.02, beta=0.87, persistence=0.95, conditional_vol=0.01, annualized_vol=0.18, signal="NEUTRAL"),
+        garch=GARCHResult(omega=2.5e-6, alpha=0.08, gamma=0.02, beta=0.87, persistence=0.95, conditional_vol=0.01, annualized_vol=0.18, dof=5.0, signal="NEUTRAL"),
         risk=RiskMetrics(sharpe_ratio=0.65, sortino_ratio=0.82, calmar_ratio=0.42, max_drawdown=-0.153, max_drawdown_pct=-15.3, volatility_annual=0.22, signal="NEUTRAL"),
         composite_score=0.35,
         composite_signal="BUY",

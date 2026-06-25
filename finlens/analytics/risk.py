@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
+from scipy.stats import t as t_dist, norm, skew as scipy_skew, kurtosis as scipy_kurt
 
 
 @dataclass
@@ -65,5 +66,65 @@ def calculate_risk_metrics(
         max_drawdown=round(max_dd, 4),
         max_drawdown_pct=round(max_dd_pct, 2),
         volatility_annual=round(ann_vol, 4),
+        signal=signal,
+    )
+
+
+@dataclass
+class VaRResult:
+    var_95_pct: float
+    cvar_95_pct: float
+    var_95_hist_pct: float
+    skewness: float
+    kurtosis: float
+    signal: str
+
+
+def calculate_var_metrics(
+    returns: pd.Series,
+    conditional_vol: float = 0.0,
+    dof: float = 5.0,
+    alpha: float = 0.05,
+) -> VaRResult:
+    r = returns.dropna()
+    if len(r) < 20 or conditional_vol <= 0:
+        return VaRResult(
+            var_95_pct=0,
+            cvar_95_pct=0,
+            var_95_hist_pct=0,
+            skewness=0,
+            kurtosis=0,
+            signal="N/A",
+        )
+
+    cond_vol = conditional_vol  # daily decimal vol
+    skew = float(scipy_skew(r))
+    kurt = float(scipy_kurt(r, fisher=True))
+
+    if dof > 2:
+        t_inv = float(t_dist.ppf(alpha, dof))
+        var_param = -cond_vol * t_inv
+        g_t = float(t_dist.pdf(t_inv, dof))
+        cvar_param = cond_vol * (g_t / alpha) * ((dof + t_inv**2) / (dof - 1))
+    else:
+        z = float(norm.ppf(alpha))
+        var_param = -cond_vol * z
+        cvar_param = cond_vol * (float(norm.pdf(z)) / alpha)
+
+    var_hist = -float(r.quantile(alpha))
+
+    if cvar_param < 0.015:
+        signal = "LOW RISK"
+    elif cvar_param > 0.035:
+        signal = "HIGH RISK"
+    else:
+        signal = "MED RISK"
+
+    return VaRResult(
+        var_95_pct=round(var_param * 100, 2),
+        cvar_95_pct=round(cvar_param * 100, 2),
+        var_95_hist_pct=round(var_hist * 100, 2),
+        skewness=round(skew, 3),
+        kurtosis=round(kurt, 3),
         signal=signal,
     )

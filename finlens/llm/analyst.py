@@ -36,12 +36,16 @@ def build_prompt(analysis: TickerAnalysis) -> str:
     ind, capm, garch, risk = analysis.indicators, analysis.capm, analysis.garch, analysis.risk
     capm_block = f"β={capm.beta}, α(ann)={capm.alpha}, R²={capm.r_squared}" if capm else "N/A"
 
+    var = analysis.var
+    var_block = f"VaR95={var.var_95_pct:.1f}% CVaR95={var.cvar_95_pct:.1f}% skew={var.skewness} kurt={var.kurtosis}" if var else "N/A"
+
     return f"""Analyze {analysis.ticker} ({analysis.market.upper()})
 Price: ${analysis.price} ({analysis.price_change_pct:+.2f}%)
 
 INDICATORS: SMA={ind.sma_signal} RSI={ind.rsi_signal} MACD={ind.macd_signal} BB={ind.bb_signal}
 CAPM: {capm_block}
 GJR-GARCH: σ={garch.annualized_vol*100:.1f}% persist={garch.persistence}
+VAR: {var_block}
 RISK: Sharpe={risk.sharpe_ratio} Sortino={risk.sortino_ratio} MaxDD={risk.max_drawdown_pct:.1f}%
 COMPOSITE: {analysis.composite_score:+.2f} ({analysis.composite_signal})"""
 

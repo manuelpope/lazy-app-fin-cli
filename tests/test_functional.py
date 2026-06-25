@@ -160,6 +160,32 @@ def test_garch(cfg: FinLensConfig) -> None:
         print(f"  SKIP GARCH: {e}")
 
 
+def test_var(cfg: FinLensConfig) -> None:
+    """Compute VaR/CVaR on a real ticker."""
+    import pandas as pd
+    from finlens.data.fetcher import fetch_ticker_data, DataCache
+    from finlens.analytics.garch import fit_gjr_garch
+    from finlens.analytics.risk import calculate_var_metrics
+    cache = DataCache(cfg.cache.dir)
+    try:
+        ticker = cfg.markets["us"].tickers[0]
+        df = fetch_ticker_data(ticker, period="120d", cache=cache)
+        close = df["Close"]
+        close = close.squeeze() if isinstance(close, pd.DataFrame) else close
+        returns = close.pct_change().dropna()
+        if len(returns) > 50:
+            garch = fit_gjr_garch(returns, p=1, q=1)
+            var = calculate_var_metrics(returns, conditional_vol=garch.conditional_vol, dof=garch.dof)
+            assert isinstance(var.var_95_pct, float)
+            assert isinstance(var.cvar_95_pct, float)
+            assert var.cvar_95_pct > var.var_95_pct
+            assert var.skewness != 0
+            print(f"  VaR95: {var.var_95_pct:.2f}%  CVaR95: {var.cvar_95_pct:.2f}%  Hist95: {var.var_95_hist_pct:.2f}%")
+            print(f"  Skew: {var.skewness}  Kurt: {var.kurtosis}  Risk: {var.signal}")
+    except Exception as e:
+        print(f"  SKIP VaR: {e}")
+
+
 def test_risk(cfg: FinLensConfig) -> None:
     """Compute risk metrics on a real ticker."""
     import pandas as pd
@@ -325,6 +351,7 @@ async def main():
     print(run_sync("  indicators", test_indicators))
     print(run_sync("  CAPM", test_capm, cfg))
     print(run_sync("  GARCH", test_garch, cfg))
+    print(run_sync("  VaR / CVaR", test_var, cfg))
     print(run_sync("  risk metrics", test_risk, cfg))
 
     print("\n4. Signal Engine")

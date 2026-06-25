@@ -18,6 +18,7 @@ class GARCHResult:
     persistence: float
     conditional_vol: float
     annualized_vol: float
+    dof: float
     signal: str
 
 
@@ -44,6 +45,7 @@ def fit_gjr_garch(
         alpha = float(result.params.get("alpha[1]", 0))
         gamma = float(result.params.get("gamma[1]", 0))
         beta = float(result.params.get("beta[1]", 0))
+        nu = float(result.params.get("nu", 0))
 
         persistence = alpha + gamma / 2 + beta
         cond_vol = result.conditional_volatility.iloc[-1]
@@ -64,6 +66,7 @@ def fit_gjr_garch(
             persistence=round(persistence, 4),
             conditional_vol=round(cond_vol, 4),
             annualized_vol=round(ann_vol, 4),
+            dof=round(nu, 2) if nu > 2 else 5.0,
             signal=signal,
         )
     except Exception as e:
@@ -75,5 +78,6 @@ def fit_gjr_garch(
             persistence=0,
             conditional_vol=0,
             annualized_vol=0,
+            dof=5.0,
             signal="N/A",
         )
