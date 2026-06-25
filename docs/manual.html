@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FinLens — Manual de Usuario</title>
+<style>
+  :root {
+    --bg: #1a1b26;
+    --surface: #24283b;
+    --text: #c0caf5;
+    --muted: #565f89;
+    --accent: #7aa2f7;
+    --green: #9ece6a;
+    --red: #f7768e;
+    --yellow: #e0af68;
+    --border: #3b4261;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 2rem; color: #fff; margin-bottom: .5rem; }
+  h2 { font-size: 1.4rem; color: var(--accent); margin-top: 2.5rem; margin-bottom: .8rem; border-bottom: 1px solid var(--border); padding-bottom: .3rem; }
+  h3 { font-size: 1.1rem; color: var(--yellow); margin-top: 1.5rem; margin-bottom: .5rem; }
+  p, li { margin-bottom: .5rem; }
+  a { color: var(--accent); }
+  code, pre {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: .85rem;
+  }
+  code { padding: .1em .3em; }
+  pre { padding: 1rem; overflow-x: auto; margin: .8rem 0; line-height: 1.5; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th, td { text-align: left; padding: .6rem .8rem; border-bottom: 1px solid var(--border); }
+  th { background: var(--surface); color: var(--accent); font-weight: 600; }
+  .tag { display: inline-block; background: var(--surface); color: var(--accent); border: 1px solid var(--border); border-radius: 3px; padding: 0 .4em; font-size: .8rem; font-weight: 600; }
+  .bu { color: var(--green); }
+  .se { color: var(--red); }
+  .ho { color: var(--muted); }
+  .note { background: var(--surface); border-left: 3px solid var(--accent); padding: .8rem 1rem; margin: 1rem 0; border-radius: 0 4px 4px 0; }
+  .warn { background: var(--surface); border-left: 3px solid var(--yellow); padding: .8rem 1rem; margin: 1rem 0; border-radius: 0 4px 4px 0; }
+  .kbd { display: inline-block; background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: .1em .4em; font-family: monospace; font-size: .8rem; box-shadow: 0 1px 0 var(--border); }
+  .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: .85rem; color: var(--muted); text-align: center; }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f5f5; --surface: #e8e8e8; --text: #333; --muted: #888;
+      --border: #ccc; --yellow: #b8860b; --green: #2e7d32; --red: #c62828;
+    }
+    h1 { color: #111; }
+  }
+</style>
+</head>
+<body>
+
+<h1>FinLens</h1>
+<p>Terminal UI para señales de trading: indicadores técnicos, CAPM, GJR-GARCH, métricas de riesgo y análisis LLM vía Ollama. Datos frescos de Yahoo Finance.</p>
+
+<pre style="margin-top:1.5rem">$ uv run finlens       # TUI interactiva (con uv)
+$ finlens              # o si está instalado
+$ finlens scan         # escaneo headless
+$ finlens --help       # ayuda CLI</pre>
+
+<!-- ===== INSTALACIÓN ===== -->
+<h2>Instalación</h2>
+
+<h3>Requisitos</h3>
+<ul>
+  <li>Python 3.12+</li>
+  <li><a href="https://ollama.ai" target="_blank">Ollama</a> (opcional, para análisis LLM)</li>
+  <li>Modelo recomendado: <code>qwen3.5:9b-mlx</code> o <code>phi4</code></li>
+</ul>
+
+<h3>Instalar</h3>
+<pre>git clone &lt;repo&gt; &amp;&amp; cd finlens
+
+# Opción A — uv (recomendado)
+uv sync
+uv run finlens
+
+# Opción B — pip
+pip install -e .
+finlens
+
+# Modelo LLM opcional
+ollama pull qwen3.5:9b-mlx</pre>
+
+<h3>Configurar</h3>
+<p>Editar <code>config.yaml</code> en la raíz del proyecto:</p>
+<table>
+  <tr><th>Campo</th><th>Descripción</th><th>Default</th></tr>
+  <tr><td><code>markets</code></td><td>Mercados con tickers, benchmark y risk-free rate</td><td>—</td></tr>
+  <tr><td><code>signals</code></td><td>Períodos lookback, RSI, SMA, MACD, BB, GARCH</td><td>252d lookback</td></tr>
+  <tr><td><code>composite.weights</code></td><td>Pesos de cada indicador en score compuesto</td><td>sma:0.15, rsi:0.20, ...</td></tr>
+  <tr><td><code>composite.buy_threshold</code></td><td>Score mínimo para señal BUY</td><td>0.30</td></tr>
+  <tr><td><code>composite.sell_threshold</code></td><td>Score máximo para señal SELL</td><td>-0.30</td></tr>
+  <tr><td><code>llm.model</code></td><td>Modelo Ollama para análisis</td><td>qwen3.5:9b-mlx</td></tr>
+  <tr><td><code>llm.enabled</code></td><td>Habilitar/deshabilitar LLM</td><td>true</td></tr>
+  <tr><td><code>cache.max_age_hours</code></td><td>Horas antes de refetch</td><td>24</td></tr>
+</table>
+
+<h3>Variables de entorno (.env)</h3>
+<p>Crear un archivo <code>.env</code> en la raíz (opcional, sobreescribe <code>config.yaml</code>):</p>
+<pre>OLLAMA_MODEL=qwen3.5:9b-mlx
+OLLAMA_API_URL=http://localhost:11434
+OLLAMA_API_KEY=
+FINLENS_FORCE_REFRESH=false</pre>
+<p>Se carga automáticamente al iniciar la app vía <code>python-dotenv</code>.</p>
+
+<div class="note"><strong>Mercados preconfigurados:</strong> US (^GSPC benchmark), Argentina BYMA/CEDEARs (^MERV benchmark), Emerging Bonds (EMB self-benchmarked). Risk-free rate: 4.5% US, 40% Argentina, 5% Bonds.</div>
+
+<!-- ===== USO TUI ===== -->
+<h2>Uso — Terminal UI</h2>
+<p>Ejecutar <code>finlens</code>. La pantalla se divide en tres áreas:</p>
+<ul>
+  <li><strong>Sidebar izquierdo</strong> — árbol de mercados y leyenda de teclas</li>
+  <li><strong>Tabla central</strong> — matriz de señales (ticker, precio, score compuesto, señal)</li>
+  <li><strong>Panel derecho</strong> — detalle del ticker seleccionado (indicadores, CAPM, GARCH, riesgo)</li>
+  <li><strong>Footer</strong> — barra de estado con bindings activos</li>
+</ul>
+
+<h3>Atajos de teclado</h3>
+<table>
+  <tr><th>Tecla</th><th>Acción</th></tr>
+  <tr><td><span class="kbd">1</span></td><td>Filtrar: todos los mercados</td></tr>
+  <tr><td><span class="kbd">2</span></td><td>Filtrar: US Markets</td></tr>
+  <tr><td><span class="kbd">3</span></td><td>Filtrar: Argentina (BYMA/CEDEARs)</td></tr>
+  <tr><td><span class="kbd">4</span></td><td>Filtrar: Emerging Bonds</td></tr>
+  <tr><td><span class="kbd">l</span></td><td>LLM: analiza el ticker seleccionado</td></tr>
+  <tr><td><span class="kbd">L</span></td><td>LLM: analiza todo el mercado filtrado</td></tr>
+  <tr><td><span class="kbd">A</span></td><td>LLM: analiza todos los tickers</td></tr>
+  <tr><td><span class="kbd">h</span></td><td>Ayuda (modal)</td></tr>
+  <tr><td><span class="kbd">s</span></td><td>Rescanear (forzar refetch de datos)</td></tr>
+  <tr><td><span class="kbd">w</span></td><td>Watch mode (ON/OFF)</td></tr>
+  <tr><td><span class="kbd">c</span></td><td>Config (próximamente)</td></tr>
+  <tr><td><span class="kbd">Tab</span></td><td>Cycle focus entre widgets</td></tr>
+  <tr><td><span class="kbd">q</span></td><td>Salir</td></tr>
+  <tr><td><span class="kbd">Esc</span></td><td>Cerrar modal (ayuda / LLM)</td></tr>
+  <tr><td><span class="kbd">↑ ↓</span></td><td>Navegar filas de la tabla</td></tr>
+</table>
+
+<div class="note">El foco inicial está en la tabla de señales. Los filtros <span class="kbd">1</span>-<span class="kbd">4</span> funcionan incluso sin foco en la tabla. Para scroll vertical usar flechas arriba/abajo.</div>
+
+<!-- ===== SEÑALES ===== -->
+<h2>Señales y Score Compuesto</h2>
+<p>Cada ticker se evalúa con 4 indicadores técnicos, más CAPM y métricas de riesgo. El score compuesto (<code>-1.0</code> a <code>+1.0</code>) combina todo:</p>
+
+<table>
+  <tr><th>Componente</th><th>Peso</th><th>Qué mide</th></tr>
+  <tr><td>SMA crossover</td><td>15%</td><td>Cruce de media rápida (20d) sobre lenta (50d)</td></tr>
+  <tr><td>RSI</td><td>20%</td><td>Momento: sobrecompra (&gt;70) / sobreventa (&lt;30)</td></tr>
+  <tr><td>MACD</td><td>15%</td><td>Convergencia/divergencia de medias móviles</td></tr>
+  <tr><td>Bollinger Bands</td><td>15%</td><td>Anchura de bandas y posición del precio</td></tr>
+  <tr><td>CAPM alpha</td><td>15%</td><td>Alpha anualizado (regresión t-dist)</td></tr>
+  <tr><td>Risk ratio</td><td>20%</td><td>Sharpe + Sortino + Calmar combinados</td></tr>
+</table>
+
+<p><strong>Señal final:</strong></p>
+<ul>
+  <li><span class="bu">BUY</span> — score <code>&ge; +0.30</code></li>
+  <li><span class="ho">HOLD</span> — score entre <code>-0.30</code> y <code>+0.30</code></li>
+  <li><span class="se">SELL</span> — score <code>&le; -0.30</code></li>
+</ul>
+
+<!-- ===== MODELOS ANALÍTICOS ===== -->
+<h2>Modelos Analíticos</h2>
+
+<h3>CAPM Heavy-Tailed</h3>
+<p>Regresión lineal de retornos del activo contra el benchmark del mercado usando <strong>distribución t de Student</strong> (en vez de normal). Esto captura mejor las colas pesadas típicas de mercados emergentes. Se estima por máxima verosimilitud (<code>scipy.optimize.minimize</code>).</p>
+<ul>
+  <li><code>alpha</code> — retorno anómalo (anualizado)</li>
+  <li><code>beta</code> — sensibilidad al mercado</li>
+  <li><code>R²</code> — bondad de ajuste</li>
+  <li><code>p_value_alpha</code> — significancia estadística del alpha</li>
+</ul>
+
+<h3>GJR-GARCH(1,1)</h3>
+<p>Modelo de volatilidad asimétrica que captura el <strong>efecto leverage</strong>: las malas noticias incrementan más la volatilidad que las buenas. Estimado con <code>arch_model</code> usando distribución t.</p>
+<ul>
+  <li><code>omega</code>, <code>alpha</code>, <code>gamma</code>, <code>beta</code> — parámetros del modelo</li>
+  <li><code>persistence</code> — persistencia de shocks de volatilidad (alpha + gamma/2 + beta)</li>
+  <li><code>annualized_vol</code> — volatilidad anualizada proyectada</li>
+</ul>
+
+<h3>Métricas de Riesgo</h3>
+<table>
+  <tr><th>Métrica</th><th>Fórmula</th><th>Interpretación</th></tr>
+  <tr><td>Sharpe Ratio</td><td>(R<sub>p</sub> − R<sub>f</sub>) / σ<sub>p</sub></td><td>Retorno por unidad de riesgo total (&gt;1 bueno)</td></tr>
+  <tr><td>Sortino Ratio</td><td>(R<sub>p</sub> − R<sub>f</sub>) / σ<sub>down</sub></td><td>Retorno por unidad de riesgo bajista (mejor que Sharpe)</td></tr>
+  <tr><td>Calmar Ratio</td><td>(R<sub>p</sub> − R<sub>f</sub>) / |maxDD|</td><td>Retorno por unidad de máximo drawdown</td></tr>
+  <tr><td>Max Drawdown</td><td>Peor caída pico-a-valle</td><td>Riesgo de cola histórico</td></tr>
+</table>
+
+<!-- ===== LLM ===== -->
+<h2>Análisis LLM (Ollama)</h2>
+<p>El análisis LLM envía los datos del ticker (señales, CAPM, GARCH, riesgo) a un modelo local vía la API compatible con OpenAI de Ollama. El modelo devuelve un análisis narrativo con recomendación y confianza.</p>
+
+<div class="warn"><strong>Rendimiento:</strong> Modelos "thinking" como qwen3.5 pueden tardar 30-50s por ticker porque generan razonamiento interno extenso antes de la respuesta. Para más velocidad, usar modelos como <code>phi4</code> o <code>granite4.1:3b</code>.</div>
+
+<h3>Formato del prompt</h3>
+<p>El prompt incluye: ticker, precio, cambio %, señales individuales (SMA/RSI/MACD/BB), CAPM (β, α, R²), GARCH (σ, persistencia), métricas de riesgo (Sharpe, Sortino, MaxDD), y score compuesto.</p>
+
+<h3>Formato de respuesta esperado</h3>
+<p>El modelo debe responder con tres marcadores:</p>
+<pre>[NARRATIVE] El activo muestra momentum alcista con indicadores alineados...
+[CONFIDENCE] 0.72
+[RECOMMENDATION] BUY</pre>
+<p>Si faltan marcadores, se usan defaults (<code>HOLD</code>, confianza <code>0.5</code>, narrative truncado a 400 caracteres).</p>
+
+<h3>Comandos LLM en TUI</h3>
+<table>
+  <tr><th>Tecla</th><th>Scope</th><th>Resultado</th></tr>
+  <tr><td><span class="kbd">l</span></td><td>Ticker seleccionado (o primero filtrado)</td><td>1 análisis</td></tr>
+  <tr><td><span class="kbd">L</span></td><td>Mercado filtrado actual</td><td>N análisis (uno por ticker)</td></tr>
+  <tr><td><span class="kbd">A</span></td><td>Todos los tickers</td><td>Todos los análisis</td></tr>
+</table>
+<p>Los resultados aparecen en un overlay modal. Presionar <span class="kbd">Esc</span> para cerrar.</p>
+
+<!-- ===== CACHE ===== -->
+<h2>Cache de Datos</h2>
+<p>Los datos descargados de Yahoo Finance se guardan localmente en <code>.finlens_cache/</code> como archivos Parquet. Cada ticker tiene su propio archivo. La próxima vez que se ejecute la app, si el cache tiene menos de <code>max_age_hours</code> (default 24), se reusa. Para forzar refetch, usar <span class="kbd">s</span> o <code>finlens scan --force</code>.</p>
+
+<!-- ===== HEADLESS ===== -->
+<h2>Modo Headless (CLI)</h2>
+<p>Ejecutar escaneo sin interfaz gráfica. Útil para automatización o scripts:</p>
+<pre>finlens scan                         # escaneo normal con cache
+finlens scan --force                 # forzar descarga fresca
+finlens scan --verbose               # más output
+finlens scan --config /ruta/config.yaml</pre>
+<p>El modo headless imprime una tabla resumen en consola con todos los tickers, precio, cambio %, señales y score compuesto.</p>
+
+<!-- ===== ARCHIVOS ===== -->
+<h2>Estructura del Proyecto</h2>
+<pre>finlens/
+├── .env                     # variables de entorno (opcional)
+├── .gitignore
+├── .python-version          # para uv
+├── pyproject.toml           # metadata y dependencias
+├── config.yaml              # mercados, señales, LLM, cache
+├── README.md
+├── finlens/                 # paquete Python
+│   ├── cli.py               # entry point typer
+│   ├── config.py            # modelos pydantic
+│   ├── data/fetcher.py      # descarga Yahoo Finance + cache parquet
+│   ├── analytics/
+│   │   ├── indicators.py    # SMA, RSI, MACD, BB
+│   │   ├── capm.py          # CAPM con errores t-dist
+│   │   ├── garch.py         # GJR-GARCH(1,1)
+│   │   └── risk.py          # Sharpe, Sortino, Calmar, MaxDD
+│   ├── signals/engine.py    # score compuesto
+│   ├── output/terminal.py   # TUI textual
+│   └── llm/analyst.py       # cliente Ollama + parsing
+├── tests/
+│   └── test_llm_e2e.py      # tests end-to-end LLM
+└── docs/
+    └── manual.html           # este archivo</pre>
+
+<!-- ===== TROUBLESHOOTING ===== -->
+<h2>Troubleshooting</h2>
+
+<h3>No se ven datos / "Loading..." eterno</h3>
+<p>Verificar conexión a internet. Yahoo Finance puede bloquear requests masivos. Reintentar con <span class="kbd">s</span> o <code>finlens scan --force --verbose</code> para ver errores.</p>
+
+<h3>El overlay LLM no aparece</h3>
+<p>Verificar: (1) Ollama corriendo (<code>ollama serve</code>), (2) modelo descargado (<code>ollama list</code>), (3) <code>llm.enabled: true</code> en config.yaml, (4) puerto 11434 accesible.</p>
+
+<h3>"No ticker selected" al presionar l</h3>
+<p>Navegar con flechas a una fila de la tabla primero, o presionar <span class="kbd">l</span> de nuevo (usa el primer ticker filtrado como fallback).</p>
+
+<h3>Errores de conexión Ollama</h3>
+<p>Asegurar que Ollama está corriendo: <code>curl http://localhost:11434/api/tags</code>. Si usás un host/puerto distinto, actualizar <code>llm.api_url</code> en config.yaml.</p>
+
+<h3>Cache corrupto</h3>
+<p>Eliminar la carpeta <code>.finlens_cache/</code> manualmente: <code>rm -rf .finlens_cache</code>.</p>
+
+<div class="footer">
+  FinLens — built with Python, Textual, yfinance, scipy, arch, httpx, Ollama
+</div>
+
+</body>
+</html>

@@ -1,0 +1,77 @@
+markets:
+  us:
+    name: "US Markets"
+    tickers:
+      - SPY
+      - QQQ
+      - AAPL
+      - MSFT
+      - NVDA
+      - GOOGL
+      - AMZN
+      - META
+      - TSLA
+    benchmark: "^GSPC"
+    risk_free_rate: 4.5
+
+  argentina:
+    name: "Argentina (BYMA/CEDEARs)"
+    tickers:
+      - GGAL.BA
+      - YPFD.BA
+      - PAMP.BA
+      - CEPU.BA
+      - EDN.BA
+      - SPY.BA
+      - IVV.BA
+    benchmark: "^MERV"
+    risk_free_rate: 40.0
+
+  bonds:
+    name: "Emerging Bonds"
+    tickers:
+      - EMB
+      - PCY
+      - EEM
+      - EMXC
+      - BLV
+      - BND
+    benchmark: EMB
+    risk_free_rate: 5.0
+
+signals:
+  lookback_days: 252
+  rsi_period: 14
+  rsi_oversold: 30
+  rsi_overbought: 70
+  sma_fast: 20
+  sma_slow: 50
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+  bb_period: 20
+  bb_std: 2
+  garch_p: 1
+  garch_q: 1
+
+composite:
+  weights:
+    sma: 0.15
+    rsi: 0.20
+    macd: 0.15
+    bb: 0.15
+    capm_alpha: 0.15
+    risk_ratio: 0.20
+  buy_threshold: 0.30
+  sell_threshold: -0.30
+
+llm:
+  provider: "ollama"
+  model: "qwen3.5:9b-mlx"
+  api_url: "http://localhost:11434"
+  api_key_env: ""
+  enabled: true
+
+cache:
+  dir: ".finlens_cache"
+  max_age_hours: 24
